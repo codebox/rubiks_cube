@@ -29,6 +29,16 @@ front_group = Group(Direction.UP, Direction.RIGHT, Direction.DOWN, Direction.LEF
 # back_group = Group(Direction.UP, Direction.LEFT, Direction.DOWN, Direction.RIGHT)
 
 class Rotation:
+    '''
+    A rotation of +1 along the x,y or z axis means if you are on the positive side of that axis
+    looking back at the origin, there is a 90 degree clockwise rotation. So:
+        U -> (0, 1, 0)
+        D -> (0, -1, 0)
+        R -> (1, 0, 0)
+        L -> (-1, 0, 0)
+        F -> (0, 0, 1)
+        B -> (0, 0, -1)
+    '''
     def __init__(self, x, y, z):
         self.x = x
         self.y = y
@@ -45,11 +55,19 @@ class Rotation:
     def __str__(self):
         return "Rotation {},{},{}".format(self.x, self.y, self.z)
 
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y and self.z == other.z
+
 
 class Piece:
-    def __init__(self, piece_id):
-        self.id = piece_id
+    def __init__(self, initial_coords):
+        self.id = "{},{},{}".format(*initial_coords)
+        self.initial_coords = initial_coords
+        self.coords = initial_coords
         self.rotation = Rotation(0, 0, 0)
+
+    def move(self, new_coords):
+        self.coords = new_coords
 
     def rotate(self, rotation):
         self.rotation += rotation
@@ -74,15 +92,14 @@ class Cube:
         self.pieces = self._init_pieces()
 
     def _init_pieces(self):
-        coords = [
-            (x, y, z)
+        return [
+            Piece((x, y, z))
             for x in range(self.start_coord, self.end_coord) if self.is_odd or x != 0
             for y in range(self.start_coord, self.end_coord) if self.is_odd or y != 0
             for z in range(self.start_coord, self.end_coord) if self.is_odd or z != 0
         ]
-        return {c: Piece("{},{},{}".format(*c)) for c in coords}
 
-    def _get_face_coords(self, face):
+    def _get_pieces_for_face(self, face):
         coord_filter = {
             Direction.UP: lambda x, y, z: y == self.end_coord - 1,
             Direction.DOWN: lambda x, y, z: y == self.start_coord,
@@ -91,18 +108,38 @@ class Cube:
             Direction.FRONT: lambda x, y, z: z == self.end_coord - 1,
             Direction.BACK: lambda x, y, z: z == self.start_coord
         }.get(face)
-        return [coord for coord in self.pieces.keys() if coord_filter(*coord)]
+        return [piece for piece in self.pieces if coord_filter(*piece.coords)]
 
     def move(self, face, count):
-        pass
+        d = 1 if count > 0 else -1
+        transform = {
+            Direction.UP: lambda x, y, z: (-z*d, y, x*d),
+            Direction.DOWN: lambda x, y, z: (z*d, y, -x*d),
+            Direction.LEFT: lambda x, y, z: (x, -z*d, y*d),
+            Direction.RIGHT: lambda x, y, z: (x, z*d, -y*d),
+            Direction.FRONT: lambda x, y, z: (y*d, -x*d, z),
+            Direction.BACK: lambda x, y, z: (y*d, -x*d, z)
+        }.get(face)
+        pieces_to_move = self._get_pieces_for_face(face)
+        for piece in pieces_to_move:
+            for _ in range(abs(count)):
+                piece.move(transform(*piece.coords))
+        rotation = {
+            Direction.UP: Rotation(0, count, 0),
+            Direction.DOWN: Rotation(0, -count, 0),
+            Direction.LEFT: Rotation(-count, 0, 0),
+            Direction.RIGHT: Rotation(count, 0, 0),
+            Direction.FRONT: Rotation(0, 0, count),
+            Direction.BACK: Rotation(0, 0, -count)
+        }.get(face)
+        [piece.rotate(rotation) for piece in pieces_to_move]
 
     def print(self):
         def face_grid(direction, get_x_coord, get_y_coord):
             grid = {}
-            for piece_coords in self._get_face_coords(direction):
-                grid_x = get_x_coord(piece_coords)
-                grid_y = get_y_coord(piece_coords)
-                piece = self.pieces[piece_coords]
+            for piece in self._get_pieces_for_face(direction):
+                grid_x = get_x_coord(piece.coords)
+                grid_y = get_y_coord(piece.coords)
                 piece_face_value = piece.face_value(direction)
                 grid[(grid_x, grid_y)] = piece_face_value
 
@@ -119,7 +156,7 @@ class Cube:
         l_grid = face_grid(Direction.LEFT, coord_transformer(2), coord_transformer(1))
         r_grid = face_grid(Direction.RIGHT, coord_transformer(2, True), coord_transformer(1))
         d_grid = face_grid(Direction.DOWN, coord_transformer(0), coord_transformer(2))
-        b_grid = face_grid(Direction.BACK, coord_transformer(0, True), coord_transformer(1, True))
+        b_grid = face_grid(Direction.BACK, coord_transformer(0), coord_transformer(1))
 
         full_grid = {}
         def add_to_full_grid(face_grid, x_offset, y_offset):
