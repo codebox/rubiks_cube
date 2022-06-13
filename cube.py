@@ -118,7 +118,7 @@ class Cube:
             Direction.LEFT: lambda x, y, z: (x, -z*d, y*d),
             Direction.RIGHT: lambda x, y, z: (x, z*d, -y*d),
             Direction.FRONT: lambda x, y, z: (y*d, -x*d, z),
-            Direction.BACK: lambda x, y, z: (y*d, -x*d, z)
+            Direction.BACK: lambda x, y, z: (-y*d, x*d, z)
         }.get(face)
         pieces_to_move = self._get_pieces_for_face(face)
         for piece in pieces_to_move:
