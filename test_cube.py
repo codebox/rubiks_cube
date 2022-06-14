@@ -16,18 +16,15 @@ class TestEvenCube(unittest.TestCase):
     def setUp(self):
         self.cube = Cube(2)
 
-    def assert_piece_state(self, initial_coords, expected_coords, expected_rotation):
+    def assert_piece_position(self, initial_coords, expected_coords):
         piece = next(p for p in self.cube.pieces if p.initial_coords == initial_coords)
         self.assertEqual(piece.coords, expected_coords,
                          "Expected piece with initial_coord {} to be at {} but instead it was at {}".
                          format(initial_coords, expected_coords, piece.coords))
-        self.assertEqual(piece.rotation, expected_rotation,
-                         "Expected piece with initial_coord {} to have rotation {} but instead it was {}".
-                         format(initial_coords, expected_rotation, piece.rotation))
 
     def assert_pieces_not_affected(self, *initial_coords):
         for ic in initial_coords:
-            self.assert_piece_state(ic, ic, Rotation(0, 0, 0))
+            self.assert_piece_position(ic, ic)
 
     def test_pieces_initialised_correctly_for_even_cube(self):
         pieces = self.cube.pieces
@@ -39,110 +36,110 @@ class TestEvenCube(unittest.TestCase):
         # Back face
         self.assert_pieces_not_affected(LDB, RDB, LUB, RUB)
         # Front face
-        self.assert_piece_state(LDF, LUF, Rotation(0, 0, 1))
-        self.assert_piece_state(RDF, LDF, Rotation(0, 0, 1))
-        self.assert_piece_state(LUF, RUF, Rotation(0, 0, 1))
-        self.assert_piece_state(RUF, RDF, Rotation(0, 0, 1))
+        self.assert_piece_position(LDF, LUF)
+        self.assert_piece_position(RDF, LDF)
+        self.assert_piece_position(LUF, RUF)
+        self.assert_piece_position(RUF, RDF)
 
     def test_f2_move_applied_correctly(self):
         self.cube.move(Direction.FRONT, 2)
         # Back face
         self.assert_pieces_not_affected(LDB, RDB, LUB, RUB)
         # Front face
-        self.assert_piece_state(LDF, RUF, Rotation(0, 0, 2))
-        self.assert_piece_state(RDF, LUF, Rotation(0, 0, 2))
-        self.assert_piece_state(LUF, RDF, Rotation(0, 0, 2))
-        self.assert_piece_state(RUF, LDF, Rotation(0, 0, 2))
+        self.assert_piece_position(LDF, RUF)
+        self.assert_piece_position(RDF, LUF)
+        self.assert_piece_position(LUF, RDF)
+        self.assert_piece_position(RUF, LDF)
 
     def test_f_minus_1_move_applied_correctly(self):
         self.cube.move(Direction.FRONT, -1)
         # Back face
         self.assert_pieces_not_affected(LDB, RDB, LUB, RUB)
         # Front face
-        self.assert_piece_state(LDF, RDF, Rotation(0, 0, 3))
-        self.assert_piece_state(RDF, RUF, Rotation(0, 0, 3))
-        self.assert_piece_state(LUF, LDF, Rotation(0, 0, 3))
-        self.assert_piece_state(RUF, LUF, Rotation(0, 0, 3))
+        self.assert_piece_position(LDF, RDF)
+        self.assert_piece_position(RDF, RUF)
+        self.assert_piece_position(LUF, LDF)
+        self.assert_piece_position(RUF, LUF)
 
     def test_u1_move_applied_correctly(self):
         self.cube.move(Direction.UP, 1)
         # Down face
         self.assert_pieces_not_affected(LDB, LDF, RDB, RDF)
         # Up face
-        self.assert_piece_state(LUB, RUB, Rotation(0, 1, 0))
-        self.assert_piece_state(RUB, RUF, Rotation(0, 1, 0))
-        self.assert_piece_state(RUF, LUF, Rotation(0, 1, 0))
-        self.assert_piece_state(LUF, LUB, Rotation(0, 1, 0))
+        self.assert_piece_position(LUB, RUB)
+        self.assert_piece_position(RUB, RUF)
+        self.assert_piece_position(RUF, LUF)
+        self.assert_piece_position(LUF, LUB)
 
     def test_u2_move_applied_correctly(self):
         self.cube.move(Direction.UP, 2)
         # Down face
         self.assert_pieces_not_affected(LDB, LDF, RDB, RDF)
         # Up face
-        self.assert_piece_state(LUB, RUF, Rotation(0, 2, 0))
-        self.assert_piece_state(RUB, LUF, Rotation(0, 2, 0))
-        self.assert_piece_state(RUF, LUB, Rotation(0, 2, 0))
-        self.assert_piece_state(LUF, RUB, Rotation(0, 2, 0))
+        self.assert_piece_position(LUB, RUF)
+        self.assert_piece_position(RUB, LUF)
+        self.assert_piece_position(RUF, LUB)
+        self.assert_piece_position(LUF, RUB)
 
     def test_u_minus_1_move_applied_correctly(self):
         self.cube.move(Direction.UP, -1)
         # Down face
         self.assert_pieces_not_affected(LDB, LDF, RDB, RDF)
         # Up face
-        self.assert_piece_state(LUB, LUF, Rotation(0, 3, 0))
-        self.assert_piece_state(RUB, LUB, Rotation(0, 3, 0))
-        self.assert_piece_state(RUF, RUB, Rotation(0, 3, 0))
-        self.assert_piece_state(LUF, RUF, Rotation(0, 3, 0))
+        self.assert_piece_position(LUB, LUF)
+        self.assert_piece_position(RUB, LUB)
+        self.assert_piece_position(RUF, RUB)
+        self.assert_piece_position(LUF, RUF)
 
     def test_r1_move_applied_correctly(self):
         self.cube.move(Direction.RIGHT, 1)
         # Left face
         self.assert_pieces_not_affected(LDB, LUB, LDF, LUF)
         # Right face
-        self.assert_piece_state(RUB, RDB, Rotation(1, 0, 0))
-        self.assert_piece_state(RDB, RDF, Rotation(1, 0, 0))
-        self.assert_piece_state(RUF, RUB, Rotation(1, 0, 0))
-        self.assert_piece_state(RDF, RUF, Rotation(1, 0, 0))
+        self.assert_piece_position(RUB, RDB)
+        self.assert_piece_position(RDB, RDF)
+        self.assert_piece_position(RUF, RUB)
+        self.assert_piece_position(RDF, RUF)
 
     def test_r2_move_applied_correctly(self):
         self.cube.move(Direction.RIGHT, 2)
         # Left face
         self.assert_pieces_not_affected(LDB, LUB, LDF, LUF)
         # Right face
-        self.assert_piece_state(RUB, RDF, Rotation(2, 0, 0))
-        self.assert_piece_state(RDB, RUF, Rotation(2, 0, 0))
-        self.assert_piece_state(RUF, RDB, Rotation(2, 0, 0))
-        self.assert_piece_state(RDF, RUB, Rotation(2, 0, 0))
+        self.assert_piece_position(RUB, RDF)
+        self.assert_piece_position(RDB, RUF)
+        self.assert_piece_position(RUF, RDB)
+        self.assert_piece_position(RDF, RUB)
 
     def test_r_minus_1_move_applied_correctly(self):
         self.cube.move(Direction.RIGHT, -1)
         # Left face
         self.assert_pieces_not_affected(LDB, LUB, LDF, LUF)
         # Right face
-        self.assert_piece_state(RUB, RUF, Rotation(3, 0, 0))
-        self.assert_piece_state(RUF, RDF, Rotation(3, 0, 0))
-        self.assert_piece_state(RDF, RDB, Rotation(3, 0, 0))
-        self.assert_piece_state(RDB, RUB, Rotation(3, 0, 0))
+        self.assert_piece_position(RUB, RUF)
+        self.assert_piece_position(RUF, RDF)
+        self.assert_piece_position(RDF, RDB)
+        self.assert_piece_position(RDB, RUB)
 
     def test_b1_move_applied_correctly(self):
         self.cube.move(Direction.BACK, 1)
         # Front face
         self.assert_pieces_not_affected(LUF, RUF, LDF, RDF)
         # Back face
-        self.assert_piece_state(LUB, LDB, Rotation(0, 0, 3))
-        self.assert_piece_state(RUB, LUB, Rotation(0, 0, 3))
-        self.assert_piece_state(LDB, RDB, Rotation(0, 0, 3))
-        self.assert_piece_state(RDB, RUB, Rotation(0, 0, 3))
+        self.assert_piece_position(LUB, LDB)
+        self.assert_piece_position(RUB, LUB)
+        self.assert_piece_position(LDB, RDB)
+        self.assert_piece_position(RDB, RUB)
 
     def test_b2_move_applied_correctly(self):
         self.cube.move(Direction.BACK, 2)
         # Front face
         self.assert_pieces_not_affected(LUF, RUF, LDF, RDF)
         # Back face
-        self.assert_piece_state(LUB, RDB, Rotation(0, 0, 2))
-        self.assert_piece_state(RUB, LDB, Rotation(0, 0, 2))
-        self.assert_piece_state(LDB, RUB, Rotation(0, 0, 2))
-        self.assert_piece_state(RDB, LUB, Rotation(0, 0, 2))
+        self.assert_piece_position(LUB, RDB)
+        self.assert_piece_position(RUB, LDB)
+        self.assert_piece_position(LDB, RUB)
+        self.assert_piece_position(RDB, LUB)
 
 
     def test_b_minus_1_move_applied_correctly(self):
@@ -150,30 +147,30 @@ class TestEvenCube(unittest.TestCase):
         # Front face
         self.assert_pieces_not_affected(LUF, RUF, LDF, RDF)
         # Back face
-        self.assert_piece_state(LUB, RUB, Rotation(0, 0, 1))
-        self.assert_piece_state(RUB, RDB, Rotation(0, 0, 1))
-        self.assert_piece_state(LDB, LUB, Rotation(0, 0, 1))
-        self.assert_piece_state(RDB, LDB, Rotation(0, 0, 1))
+        self.assert_piece_position(LUB, RUB)
+        self.assert_piece_position(RUB, RDB)
+        self.assert_piece_position(LDB, LUB)
+        self.assert_piece_position(RDB, LDB)
 
     def test_d1_move_applied_correctly(self):
         self.cube.move(Direction.DOWN, 1)
         # Up face
         self.assert_pieces_not_affected(LUF, RUF, LUB, RUB)
         # Down face
-        self.assert_piece_state(LDB, LDF, Rotation(0, 3, 0))
-        self.assert_piece_state(RDB, LDB, Rotation(0, 3, 0))
-        self.assert_piece_state(LDF, RDF, Rotation(0, 3, 0))
-        self.assert_piece_state(RDF, RDB, Rotation(0, 3, 0))
+        self.assert_piece_position(LDB, LDF)
+        self.assert_piece_position(RDB, LDB)
+        self.assert_piece_position(LDF, RDF)
+        self.assert_piece_position(RDF, RDB)
 
     def test_d2_move_applied_correctly(self):
         self.cube.move(Direction.DOWN, 2)
         # Up face
         self.assert_pieces_not_affected(LUF, RUF, LUB, RUB)
         # Down face
-        self.assert_piece_state(LDB, RDF, Rotation(0, 2, 0))
-        self.assert_piece_state(RDB, LDF, Rotation(0, 2, 0))
-        self.assert_piece_state(LDF, RDB, Rotation(0, 2, 0))
-        self.assert_piece_state(RDF, LDB, Rotation(0, 2, 0))
+        self.assert_piece_position(LDB, RDF)
+        self.assert_piece_position(RDB, LDF)
+        self.assert_piece_position(LDF, RDB)
+        self.assert_piece_position(RDF, LDB)
 
 
     def test_d_minus_1_move_applied_correctly(self):
@@ -181,10 +178,10 @@ class TestEvenCube(unittest.TestCase):
         # Up face
         self.assert_pieces_not_affected(LUF, RUF, LUB, RUB)
         # Down face
-        self.assert_piece_state(LDB, RDB, Rotation(0, 1, 0))
-        self.assert_piece_state(RDB, RDF, Rotation(0, 1, 0))
-        self.assert_piece_state(LDF, LDB, Rotation(0, 1, 0))
-        self.assert_piece_state(RDF, LDF, Rotation(0, 1, 0))
+        self.assert_piece_position(LDB, RDB)
+        self.assert_piece_position(RDB, RDF)
+        self.assert_piece_position(LDF, LDB)
+        self.assert_piece_position(RDF, LDF)
 
 
     def test_l1_move_applied_correctly(self):
@@ -192,30 +189,30 @@ class TestEvenCube(unittest.TestCase):
         # Right face
         self.assert_pieces_not_affected(RUF, RUB, RDB, RDF)
         # Left face
-        self.assert_piece_state(LUF, LDF, Rotation(3, 0, 0))
-        self.assert_piece_state(LUB, LUF, Rotation(3, 0, 0))
-        self.assert_piece_state(LDF, LDB, Rotation(3, 0, 0))
-        self.assert_piece_state(LDB, LUB, Rotation(3, 0, 0))
+        self.assert_piece_position(LUF, LDF)
+        self.assert_piece_position(LUB, LUF)
+        self.assert_piece_position(LDF, LDB)
+        self.assert_piece_position(LDB, LUB)
 
     def test_l2_move_applied_correctly(self):
         self.cube.move(Direction.LEFT, 2)
         # Right face
         self.assert_pieces_not_affected(RUF, RUB, RDB, RDF)
         # Left face
-        self.assert_piece_state(LUF, LDB, Rotation(2, 0, 0))
-        self.assert_piece_state(LUB, LDF, Rotation(2, 0, 0))
-        self.assert_piece_state(LDF, LUB, Rotation(2, 0, 0))
-        self.assert_piece_state(LDB, LUF, Rotation(2, 0, 0))
+        self.assert_piece_position(LUF, LDB)
+        self.assert_piece_position(LUB, LDF)
+        self.assert_piece_position(LDF, LUB)
+        self.assert_piece_position(LDB, LUF)
 
     def test_l_minus_1_move_applied_correctly(self):
         self.cube.move(Direction.LEFT, -1)
         # Right face
         self.assert_pieces_not_affected(RUF, RUB, RDB, RDF)
         # Left face
-        self.assert_piece_state(LUF, LUB, Rotation(1, 0, 0))
-        self.assert_piece_state(LUB, LDB, Rotation(1, 0, 0))
-        self.assert_piece_state(LDF, LUF, Rotation(1, 0, 0))
-        self.assert_piece_state(LDB, LDF, Rotation(1, 0, 0))
+        self.assert_piece_position(LUF, LUB)
+        self.assert_piece_position(LUB, LDB)
+        self.assert_piece_position(LDF, LUF)
+        self.assert_piece_position(LDB, LDF)
 
 class TestOddCube(unittest.TestCase):
     def setUp(self):

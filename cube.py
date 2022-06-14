@@ -10,6 +10,16 @@ class Direction(str, Enum):
     LEFT = 'L',
     RIGHT = 'R'
 
+
+class Face(str, Enum):
+    UP = 'U',
+    DOWN = 'D',
+    FRONT = 'F',
+    BACK = 'B',
+    LEFT = 'L',
+    RIGHT = 'R'
+
+
 class Group:
     def __init__(self, *members):
         self.members = list(members)
@@ -21,42 +31,42 @@ class Group:
             return start_member
 
 
-right_group = Group(Direction.UP, Direction.BACK, Direction.DOWN, Direction.FRONT)
-# left_group = Group(Direction.UP, Direction.FRONT, Direction.DOWN, Direction.BACK)
-up_group = Group(Direction.FRONT, Direction.LEFT, Direction.BACK, Direction.RIGHT)
-# down_group = Group(Direction.FRONT, Direction.RIGHT, Direction.BACK, Direction.LEFT)
-front_group = Group(Direction.UP, Direction.RIGHT, Direction.DOWN, Direction.LEFT)
-# back_group = Group(Direction.UP, Direction.LEFT, Direction.DOWN, Direction.RIGHT)
-
 class Rotation:
-    '''
-    A rotation of +1 along the x,y or z axis means if you are on the positive side of that axis
-    looking back at the origin, there is a 90 degree clockwise rotation. So:
-        U -> (0, 1, 0)
-        D -> (0, -1, 0)
-        R -> (1, 0, 0)
-        L -> (-1, 0, 0)
-        F -> (0, 0, 1)
-        B -> (0, 0, -1)
-    '''
-    def __init__(self, x, y, z):
-        self.x = x
-        self.y = y
-        self.z = z
-
-    def apply(self, direction):
-        direction_after_x_rotation = right_group.move_from(direction, self.x)
-        direction_after_x_and_y_rotation = up_group.move_from(direction_after_x_rotation, self.y)
-        return front_group.move_from(direction_after_x_and_y_rotation, self.z)
-
-    def __add__(self, other):
-        return Rotation((self.x + other.x) % 4, (self.y + other.y) % 4, (self.z + other.z) % 4)
+    def __init__(self, direction, count):
+        self.direction = direction
+        self.count = count % 4
 
     def __str__(self):
-        return "Rotation {},{},{}".format(self.x, self.y, self.z)
+        return "{}{}".format(self.direction[0], self.count)
 
-    def __eq__(self, other):
-        return self.x == other.x and self.y == other.y and self.z == other.z
+
+class Orientation:
+    def __init__(self):
+        self.direction_faces = {
+            Direction.FRONT: Face.FRONT,
+            Direction.BACK: Face.BACK,
+            Direction.RIGHT: Face.RIGHT,
+            Direction.LEFT: Face.LEFT,
+            Direction.UP: Face.UP,
+            Direction.DOWN: Face.DOWN
+        }
+
+    rotation_groups = {
+        Direction.RIGHT: Group(Direction.FRONT, Direction.UP, Direction.BACK, Direction.DOWN),
+        Direction.LEFT: Group(Direction.BACK, Direction.UP, Direction.FRONT, Direction.DOWN),
+        Direction.UP: Group(Direction.RIGHT, Direction.FRONT, Direction.LEFT, Direction.BACK),
+        Direction.DOWN: Group(Direction.LEFT, Direction.FRONT, Direction.RIGHT, Direction.BACK),
+        Direction.FRONT: Group(Direction.LEFT, Direction.UP, Direction.RIGHT, Direction.DOWN),
+        Direction.BACK: Group(Direction.RIGHT, Direction.UP, Direction.LEFT, Direction.DOWN)
+    }
+
+    def change(self, rotation):
+        rotation_group = Orientation.rotation_groups[rotation.direction]
+        self.direction_faces = {rotation_group.move_from(direction, rotation.count): face
+                                for direction, face in self.direction_faces.items()}
+
+    def get_face_for_direction(self, direction):
+        return self.direction_faces[direction]
 
 
 class Piece:
@@ -64,19 +74,19 @@ class Piece:
         self.id = "{},{},{}".format(*initial_coords)
         self.initial_coords = initial_coords
         self.coords = initial_coords
-        self.rotation = Rotation(0, 0, 0)
+        self.orientation = Orientation()
 
     def move(self, new_coords):
         self.coords = new_coords
 
     def rotate(self, rotation):
-        self.rotation += rotation
+        self.orientation.change(rotation)
 
-    def face_value(self, face):
-        return self.rotation.apply(face)
+    def face_value(self, direction):
+        return self.orientation.get_face_for_direction(direction)
 
     def __str__(self):
-        return "Piece[{}] {}".format(self.id, self.rotation)
+        return "Piece[{}] {}".format(self.id, self.orientation)
 
     __repr__ = __str__
 
@@ -108,9 +118,10 @@ class Cube:
             Direction.FRONT: lambda x, y, z: z == self.end_coord - 1,
             Direction.BACK: lambda x, y, z: z == self.start_coord
         }.get(face)
+
         return [piece for piece in self.pieces if coord_filter(*piece.coords)]
 
-    def move(self, face, count):
+    def move(self, direction, count):
         d = 1 if count > 0 else -1
         transform = {
             Direction.UP: lambda x, y, z: (-z*d, y, x*d),
@@ -119,20 +130,13 @@ class Cube:
             Direction.RIGHT: lambda x, y, z: (x, z*d, -y*d),
             Direction.FRONT: lambda x, y, z: (y*d, -x*d, z),
             Direction.BACK: lambda x, y, z: (-y*d, x*d, z)
-        }.get(face)
-        pieces_to_move = self._get_pieces_for_face(face)
+        }.get(direction)
+        pieces_to_move = self._get_pieces_for_face(direction)
         for piece in pieces_to_move:
             for _ in range(abs(count)):
                 piece.move(transform(*piece.coords))
-        rotation = {
-            Direction.UP: Rotation(0, count, 0),
-            Direction.DOWN: Rotation(0, -count, 0),
-            Direction.LEFT: Rotation(-count, 0, 0),
-            Direction.RIGHT: Rotation(count, 0, 0),
-            Direction.FRONT: Rotation(0, 0, count),
-            Direction.BACK: Rotation(0, 0, -count)
-        }.get(face)
-        [piece.rotate(rotation) for piece in pieces_to_move]
+
+        [piece.rotate(Rotation(direction, count)) for piece in pieces_to_move]
 
     def print(self):
         def face_grid(direction, get_x_coord, get_y_coord):
@@ -152,10 +156,10 @@ class Cube:
                 return lambda c: (c[i] - self.start_coord - (1 if not self.is_odd and c[i] > 0 else 0))
 
         u_grid = face_grid(Direction.UP, coord_transformer(0), coord_transformer(2))
-        f_grid = face_grid(Direction.FRONT, coord_transformer(0), coord_transformer(1))
-        l_grid = face_grid(Direction.LEFT, coord_transformer(2), coord_transformer(1))
-        r_grid = face_grid(Direction.RIGHT, coord_transformer(2, True), coord_transformer(1))
-        d_grid = face_grid(Direction.DOWN, coord_transformer(0), coord_transformer(2))
+        f_grid = face_grid(Direction.FRONT, coord_transformer(0), coord_transformer(1, True))
+        l_grid = face_grid(Direction.LEFT, coord_transformer(2), coord_transformer(1, True))
+        r_grid = face_grid(Direction.RIGHT, coord_transformer(2, True), coord_transformer(1, True))
+        d_grid = face_grid(Direction.DOWN, coord_transformer(0), coord_transformer(2, True))
         b_grid = face_grid(Direction.BACK, coord_transformer(0), coord_transformer(1))
 
         full_grid = {}
@@ -171,13 +175,37 @@ class Cube:
         add_to_full_grid(b_grid, self.size, self.size * 3)
 
         grid_txt = ''
+        # see https://stackoverflow.com/questions/38522909/how-to-print-color-box-on-the-console-in-python
+        TEMPLATE = '\033[48;5;{}m'
+        COLOUR_RED = TEMPLATE.format(160)
+        COLOUR_YELLOW = TEMPLATE.format(226)
+        COLOUR_ORANGE = TEMPLATE.format(202)
+        COLOUR_WHITE = TEMPLATE.format(15)
+        COLOUR_BLUE = TEMPLATE.format(12)
+        COLOUR_GREEN = TEMPLATE.format(10)
+        RESET_COLOUR = '\033[0;0m'
+        colour_lookup = {
+            Direction.UP: COLOUR_BLUE,
+            Direction.DOWN: COLOUR_GREEN,
+            Direction.RIGHT: COLOUR_RED,
+            Direction.LEFT: COLOUR_ORANGE,
+            Direction.FRONT: COLOUR_WHITE,
+            Direction.BACK: COLOUR_YELLOW,
+        }
+        space = '  '
         for y in range(0, self.size * 4):
             for x in range(0, self.size * 3):
                 c = (x,y)
-                grid_txt += full_grid[c] if c in full_grid else ' '
+                if c in full_grid:
+                    face_value = full_grid[c]
+                    face_colour = colour_lookup[face_value] + space + RESET_COLOUR + ' '
+                    grid_txt += face_colour
+                else:
+                    grid_txt += RESET_COLOUR + space + ' '
             grid_txt += '\n'
 
         print(grid_txt)
+        print(RESET_COLOUR)
 
     def __str__(self):
         return "{0}x{0} cube with {1} pieces {2}".format(self.size, len(self.pieces), self.pieces)
