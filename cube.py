@@ -1,5 +1,6 @@
 from math import trunc
 from enum import Enum
+import re
 
 
 class Direction(str, Enum):
@@ -91,7 +92,27 @@ class Piece:
     __repr__ = __str__
 
 
+class Move:
+    def __init__(self, slice_numbers, direction, count):
+        self.slice_numbers = slice_numbers
+        self.direction = direction
+        self.count = count
+        self._affects_coords = {
+            Direction.UP: lambda x, y, z: y in slice_numbers,
+            Direction.DOWN: lambda x, y, z: -y in slice_numbers,
+            Direction.LEFT: lambda x, y, z: -x in slice_numbers,
+            Direction.RIGHT: lambda x, y, z: x in slice_numbers,
+            Direction.FRONT: lambda x, y, z: z in slice_numbers,
+            Direction.BACK: lambda x, y, z: -z in slice_numbers
+        }.get(direction)
+
+    def affects_piece(self, piece):
+        return self._affects_coords(*piece.coords)
+
+
 class Cube:
+    move_parse_regex = re.compile('^(?P<face>[UDFBLR])(?P<count>[-2\']?)$')
+
     def __init__(self, size=3):
         if size < 1:
             raise ValueError("Invalid size: {}".format(size))
@@ -109,19 +130,27 @@ class Cube:
             for z in range(self.start_coord, self.end_coord) if self.is_odd or z != 0
         ]
 
-    def _get_pieces_for_face(self, face):
-        coord_filter = {
-            Direction.UP: lambda x, y, z: y == self.end_coord - 1,
-            Direction.DOWN: lambda x, y, z: y == self.start_coord,
-            Direction.LEFT: lambda x, y, z: x == self.start_coord,
-            Direction.RIGHT: lambda x, y, z: x == self.end_coord - 1,
-            Direction.FRONT: lambda x, y, z: z == self.end_coord - 1,
-            Direction.BACK: lambda x, y, z: z == self.start_coord
-        }.get(face)
+    def _parse_move(self, move_text):
+        match = Cube.move_parse_regex.search(move_text)
+        if match:
+            count_txt = match['count']
+            count = {
+                '2': 2,
+                '-': -1,
+                '\'': -1
+            }.get(count_txt, 1)
+            return Move([self.end_coord-1], Direction(match['face']), count)
+        else:
+            raise ValueError('Unable to parse move: {}'.format(move_text))
 
-        return [piece for piece in self.pieces if coord_filter(*piece.coords)]
+    def move(self, move_parts):
+        [self._move(self._parse_move(move_part)) for move_part in move_parts.split()]
 
-    def move(self, direction, count):
+    def _move(self, move_details):
+        pieces_affected = [piece for piece in self.pieces if move_details.affects_piece(piece)]
+        self._move_pieces(pieces_affected, move_details.direction, move_details.count)
+
+    def _move_pieces(self, pieces, direction, count):
         d = 1 if count > 0 else -1
         transform = {
             Direction.UP: lambda x, y, z: (-z*d, y, x*d),
@@ -131,81 +160,12 @@ class Cube:
             Direction.FRONT: lambda x, y, z: (y*d, -x*d, z),
             Direction.BACK: lambda x, y, z: (-y*d, x*d, z)
         }.get(direction)
-        pieces_to_move = self._get_pieces_for_face(direction)
-        for piece in pieces_to_move:
+
+        for piece in pieces:
             for _ in range(abs(count)):
                 piece.move(transform(*piece.coords))
 
-        [piece.rotate(Rotation(direction, count)) for piece in pieces_to_move]
-
-    def print(self):
-        def face_grid(direction, get_x_coord, get_y_coord):
-            grid = {}
-            for piece in self._get_pieces_for_face(direction):
-                grid_x = get_x_coord(piece.coords)
-                grid_y = get_y_coord(piece.coords)
-                piece_face_value = piece.face_value(direction)
-                grid[(grid_x, grid_y)] = piece_face_value
-
-            return grid
-
-        def coord_transformer(i, negate=False):
-            if negate:
-                return lambda c: (self.size - 1) - (c[i] - self.start_coord - (1 if not self.is_odd and c[i] > 0 else 0))
-            else:
-                return lambda c: (c[i] - self.start_coord - (1 if not self.is_odd and c[i] > 0 else 0))
-
-        u_grid = face_grid(Direction.UP, coord_transformer(0), coord_transformer(2))
-        f_grid = face_grid(Direction.FRONT, coord_transformer(0), coord_transformer(1, True))
-        l_grid = face_grid(Direction.LEFT, coord_transformer(2), coord_transformer(1, True))
-        r_grid = face_grid(Direction.RIGHT, coord_transformer(2, True), coord_transformer(1, True))
-        d_grid = face_grid(Direction.DOWN, coord_transformer(0), coord_transformer(2, True))
-        b_grid = face_grid(Direction.BACK, coord_transformer(0), coord_transformer(1))
-
-        full_grid = {}
-        def add_to_full_grid(face_grid, x_offset, y_offset):
-            for face_grid_coord, face_value in face_grid.items():
-                full_grid[(face_grid_coord[0] + x_offset, face_grid_coord[1] + y_offset)] = face_value
-
-        add_to_full_grid(u_grid, self.size, 0)
-        add_to_full_grid(l_grid, 0, self.size)
-        add_to_full_grid(f_grid, self.size, self.size)
-        add_to_full_grid(r_grid, self.size * 2, self.size)
-        add_to_full_grid(d_grid, self.size, self.size * 2)
-        add_to_full_grid(b_grid, self.size, self.size * 3)
-
-        grid_txt = ''
-        # see https://stackoverflow.com/questions/38522909/how-to-print-color-box-on-the-console-in-python
-        TEMPLATE = '\033[48;5;{}m'
-        COLOUR_RED = TEMPLATE.format(160)
-        COLOUR_YELLOW = TEMPLATE.format(226)
-        COLOUR_ORANGE = TEMPLATE.format(202)
-        COLOUR_WHITE = TEMPLATE.format(15)
-        COLOUR_BLUE = TEMPLATE.format(12)
-        COLOUR_GREEN = TEMPLATE.format(10)
-        RESET_COLOUR = '\033[0;0m'
-        colour_lookup = {
-            Direction.UP: COLOUR_BLUE,
-            Direction.DOWN: COLOUR_GREEN,
-            Direction.RIGHT: COLOUR_RED,
-            Direction.LEFT: COLOUR_ORANGE,
-            Direction.FRONT: COLOUR_WHITE,
-            Direction.BACK: COLOUR_YELLOW,
-        }
-        space = '  '
-        for y in range(0, self.size * 4):
-            for x in range(0, self.size * 3):
-                c = (x,y)
-                if c in full_grid:
-                    face_value = full_grid[c]
-                    face_colour = colour_lookup[face_value] + space + RESET_COLOUR + ' '
-                    grid_txt += face_colour
-                else:
-                    grid_txt += RESET_COLOUR + space + ' '
-            grid_txt += '\n'
-
-        print(grid_txt)
-        print(RESET_COLOUR)
+        [piece.rotate(Rotation(direction, count)) for piece in pieces]
 
     def __str__(self):
         return "{0}x{0} cube with {1} pieces {2}".format(self.size, len(self.pieces), self.pieces)
