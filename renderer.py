@@ -4,7 +4,7 @@ class ConsoleRenderer:
     def render(self, cube):
         def face_grid(direction, get_x_coord, get_y_coord):
             grid = {}
-            for piece in self._get_pieces_for_face(cube, direction):
+            for piece in cube.get_pieces_for_face(direction):
                 grid_x = get_x_coord(piece.coords)
                 grid_y = get_y_coord(piece.coords)
                 piece_face_value = piece.face_value(direction)
@@ -70,14 +70,3 @@ class ConsoleRenderer:
         print(grid_txt)
         print(RESET_COLOUR)
 
-    def _get_pieces_for_face(self, cube, face):
-        coord_filter = {
-            Direction.UP: lambda x, y, z: y == cube.end_coord - 1,
-            Direction.DOWN: lambda x, y, z: y == cube.start_coord,
-            Direction.LEFT: lambda x, y, z: x == cube.start_coord,
-            Direction.RIGHT: lambda x, y, z: x == cube.end_coord - 1,
-            Direction.FRONT: lambda x, y, z: z == cube.end_coord - 1,
-            Direction.BACK: lambda x, y, z: z == cube.start_coord
-        }.get(face)
-
-        return [piece for piece in cube.pieces if coord_filter(*piece.coords)]

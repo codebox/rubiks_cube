@@ -12,15 +12,6 @@ class Direction(str, Enum):
     RIGHT = 'R'
 
 
-class Face(str, Enum):
-    UP = 'U',
-    DOWN = 'D',
-    FRONT = 'F',
-    BACK = 'B',
-    LEFT = 'L',
-    RIGHT = 'R'
-
-
 class Group:
     def __init__(self, *members):
         self.members = list(members)
@@ -42,15 +33,17 @@ class Rotation:
 
 
 class Orientation:
+    initial_face_directions = {
+        Direction.FRONT: Direction.FRONT,
+        Direction.BACK: Direction.BACK,
+        Direction.RIGHT: Direction.RIGHT,
+        Direction.LEFT: Direction.LEFT,
+        Direction.UP: Direction.UP,
+        Direction.DOWN: Direction.DOWN
+    }
+
     def __init__(self):
-        self.direction_faces = {
-            Direction.FRONT: Face.FRONT,
-            Direction.BACK: Face.BACK,
-            Direction.RIGHT: Face.RIGHT,
-            Direction.LEFT: Face.LEFT,
-            Direction.UP: Face.UP,
-            Direction.DOWN: Face.DOWN
-        }
+        self.direction_faces = dict(Orientation.initial_face_directions)
 
     rotation_groups = {
         Direction.RIGHT: Group(Direction.FRONT, Direction.UP, Direction.BACK, Direction.DOWN),
@@ -130,6 +123,22 @@ class Cube:
             for z in range(self.start_coord, self.end_coord) if self.is_odd or z != 0
         ]
 
+    def get_pieces_for_face(self, face):
+        index = trunc(self.size / 2) * -1 if face in [Direction.LEFT, Direction.DOWN, Direction.BACK] else 1
+        return self._get_pieces_in_slice(face, index)
+
+    def _get_pieces_in_slice(self, direction, index):
+        coord_filter = {
+            Direction.UP: lambda x, y, z: y == index,
+            Direction.DOWN: lambda x, y, z: -y == index,
+            Direction.RIGHT: lambda x, y, z: x == index,
+            Direction.LEFT: lambda x, y, z: -x == index,
+            Direction.FRONT: lambda x, y, z: z == index,
+            Direction.BACK: lambda x, y, z: -z == index
+        }.get(direction)
+
+        return [piece for piece in self.pieces if coord_filter(*piece.coords)]
+
     def _parse_move(self, move_text):
         match = Cube.move_parse_regex.search(move_text)
         if match:
@@ -166,6 +175,10 @@ class Cube:
                 piece.move(transform(*piece.coords))
 
         [piece.rotate(Rotation(direction, count)) for piece in pieces]
+
+    def is_done(self):
+        def check_piece(p,d): return p.orientation.get_face_for_direction(d) == d
+        return all(all(check_piece(piece, direction) for piece in self.get_pieces_for_face(direction)) for direction in Direction)
 
     def __str__(self):
         return "{0}x{0} cube with {1} pieces {2}".format(self.size, len(self.pieces), self.pieces)
