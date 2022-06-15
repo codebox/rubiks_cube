@@ -1,6 +1,7 @@
 import unittest
 
-from cube import Cube, Direction
+from cube import Cube
+
 
 LUF = (-1, 1, 1)
 RUF = (1, 1, 1)
@@ -32,7 +33,7 @@ class TestEvenCube(unittest.TestCase):
         self.assertEqual(set([p.coords for p in pieces]), {LUF, RUF, LDF, RDF, LUB, RUB, LDB, RDB})
 
     def test_f1_move_applied_correctly(self):
-        self.cube.move('F')
+        self.cube.sequence('F')
         # Back face
         self.assert_pieces_not_affected(LDB, RDB, LUB, RUB)
         # Front face
@@ -42,7 +43,7 @@ class TestEvenCube(unittest.TestCase):
         self.assert_piece_position(RUF, RDF)
 
     def test_f2_move_applied_correctly(self):
-        self.cube.move('F2')
+        self.cube.sequence('F2')
         # Back face
         self.assert_pieces_not_affected(LDB, RDB, LUB, RUB)
         # Front face
@@ -52,7 +53,7 @@ class TestEvenCube(unittest.TestCase):
         self.assert_piece_position(RUF, LDF)
 
     def test_f_minus_1_move_applied_correctly(self):
-        self.cube.move('F-')
+        self.cube.sequence('F-')
         # Back face
         self.assert_pieces_not_affected(LDB, RDB, LUB, RUB)
         # Front face
@@ -62,7 +63,7 @@ class TestEvenCube(unittest.TestCase):
         self.assert_piece_position(RUF, LUF)
 
     def test_u1_move_applied_correctly(self):
-        self.cube.move('U')
+        self.cube.sequence('U')
         # Down face
         self.assert_pieces_not_affected(LDB, LDF, RDB, RDF)
         # Up face
@@ -72,7 +73,7 @@ class TestEvenCube(unittest.TestCase):
         self.assert_piece_position(LUF, LUB)
 
     def test_u2_move_applied_correctly(self):
-        self.cube.move('U2')
+        self.cube.sequence('U2')
         # Down face
         self.assert_pieces_not_affected(LDB, LDF, RDB, RDF)
         # Up face
@@ -82,7 +83,7 @@ class TestEvenCube(unittest.TestCase):
         self.assert_piece_position(LUF, RUB)
 
     def test_u_minus_1_move_applied_correctly(self):
-        self.cube.move('U-')
+        self.cube.sequence('U-')
         # Down face
         self.assert_pieces_not_affected(LDB, LDF, RDB, RDF)
         # Up face
@@ -92,7 +93,7 @@ class TestEvenCube(unittest.TestCase):
         self.assert_piece_position(LUF, RUF)
 
     def test_r1_move_applied_correctly(self):
-        self.cube.move('R')
+        self.cube.sequence('R')
         # Left face
         self.assert_pieces_not_affected(LDB, LUB, LDF, LUF)
         # Right face
@@ -102,7 +103,7 @@ class TestEvenCube(unittest.TestCase):
         self.assert_piece_position(RDF, RUF)
 
     def test_r2_move_applied_correctly(self):
-        self.cube.move('R2')
+        self.cube.sequence('R2')
         # Left face
         self.assert_pieces_not_affected(LDB, LUB, LDF, LUF)
         # Right face
@@ -112,7 +113,7 @@ class TestEvenCube(unittest.TestCase):
         self.assert_piece_position(RDF, RUB)
 
     def test_r_minus_1_move_applied_correctly(self):
-        self.cube.move('R-')
+        self.cube.sequence('R-')
         # Left face
         self.assert_pieces_not_affected(LDB, LUB, LDF, LUF)
         # Right face
@@ -122,7 +123,7 @@ class TestEvenCube(unittest.TestCase):
         self.assert_piece_position(RDB, RUB)
 
     def test_b1_move_applied_correctly(self):
-        self.cube.move('B')
+        self.cube.sequence('B')
         # Front face
         self.assert_pieces_not_affected(LUF, RUF, LDF, RDF)
         # Back face
@@ -132,7 +133,7 @@ class TestEvenCube(unittest.TestCase):
         self.assert_piece_position(RDB, RUB)
 
     def test_b2_move_applied_correctly(self):
-        self.cube.move('B2')
+        self.cube.sequence('B2')
         # Front face
         self.assert_pieces_not_affected(LUF, RUF, LDF, RDF)
         # Back face
@@ -143,7 +144,7 @@ class TestEvenCube(unittest.TestCase):
 
 
     def test_b_minus_1_move_applied_correctly(self):
-        self.cube.move('B-')
+        self.cube.sequence('B-')
         # Front face
         self.assert_pieces_not_affected(LUF, RUF, LDF, RDF)
         # Back face
@@ -153,7 +154,7 @@ class TestEvenCube(unittest.TestCase):
         self.assert_piece_position(RDB, LDB)
 
     def test_d1_move_applied_correctly(self):
-        self.cube.move('D')
+        self.cube.sequence('D')
         # Up face
         self.assert_pieces_not_affected(LUF, RUF, LUB, RUB)
         # Down face
@@ -163,7 +164,7 @@ class TestEvenCube(unittest.TestCase):
         self.assert_piece_position(RDF, RDB)
 
     def test_d2_move_applied_correctly(self):
-        self.cube.move('D2')
+        self.cube.sequence('D2')
         # Up face
         self.assert_pieces_not_affected(LUF, RUF, LUB, RUB)
         # Down face
@@ -174,7 +175,7 @@ class TestEvenCube(unittest.TestCase):
 
 
     def test_d_minus_1_move_applied_correctly(self):
-        self.cube.move('D-')
+        self.cube.sequence('D-')
         # Up face
         self.assert_pieces_not_affected(LUF, RUF, LUB, RUB)
         # Down face
@@ -185,7 +186,7 @@ class TestEvenCube(unittest.TestCase):
 
 
     def test_l1_move_applied_correctly(self):
-        self.cube.move('L')
+        self.cube.sequence('L')
         # Right face
         self.assert_pieces_not_affected(RUF, RUB, RDB, RDF)
         # Left face
@@ -195,7 +196,7 @@ class TestEvenCube(unittest.TestCase):
         self.assert_piece_position(LDB, LUB)
 
     def test_l2_move_applied_correctly(self):
-        self.cube.move('L2')
+        self.cube.sequence('L2')
         # Right face
         self.assert_pieces_not_affected(RUF, RUB, RDB, RDF)
         # Left face
@@ -205,7 +206,7 @@ class TestEvenCube(unittest.TestCase):
         self.assert_piece_position(LDB, LUF)
 
     def test_l_minus_1_move_applied_correctly(self):
-        self.cube.move('L-')
+        self.cube.sequence('L-')
         # Right face
         self.assert_pieces_not_affected(RUF, RUB, RDB, RDF)
         # Left face

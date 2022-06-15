@@ -1,27 +1,6 @@
 from math import trunc
-from enum import Enum
-import re
-
-
-class Direction(str, Enum):
-    UP = 'U',
-    DOWN = 'D',
-    FRONT = 'F',
-    BACK = 'B',
-    LEFT = 'L',
-    RIGHT = 'R'
-
-
-class Group:
-    def __init__(self, *members):
-        self.members = list(members)
-
-    def move_from(self, start_member, step_count):
-        if start_member in self.members:
-            return self.members[(self.members.index(start_member) + step_count) % len(self.members)]
-        else:
-            return start_member
-
+from parser import SequenceParser
+from direction import Direction
 
 class Rotation:
     def __init__(self, direction, count):
@@ -41,6 +20,16 @@ class Orientation:
         Direction.UP: Direction.UP,
         Direction.DOWN: Direction.DOWN
     }
+
+    class Group:
+        def __init__(self, *members):
+            self.members = list(members)
+
+        def move_from(self, start_member, step_count):
+            if start_member in self.members:
+                return self.members[(self.members.index(start_member) + step_count) % len(self.members)]
+            else:
+                return start_member
 
     def __init__(self):
         self.direction_faces = dict(Orientation.initial_face_directions)
@@ -85,27 +74,7 @@ class Piece:
     __repr__ = __str__
 
 
-class Move:
-    def __init__(self, slice_numbers, direction, count):
-        self.slice_numbers = slice_numbers
-        self.direction = direction
-        self.count = count
-        self._affects_coords = {
-            Direction.UP: lambda x, y, z: y in slice_numbers,
-            Direction.DOWN: lambda x, y, z: -y in slice_numbers,
-            Direction.LEFT: lambda x, y, z: -x in slice_numbers,
-            Direction.RIGHT: lambda x, y, z: x in slice_numbers,
-            Direction.FRONT: lambda x, y, z: z in slice_numbers,
-            Direction.BACK: lambda x, y, z: -z in slice_numbers
-        }.get(direction)
-
-    def affects_piece(self, piece):
-        return self._affects_coords(*piece.coords)
-
-
 class Cube:
-    move_parse_regex = re.compile('^(?P<face>[UDFBLR])(?P<count>[-2\']?)$')
-
     def __init__(self, size=3):
         if size < 1:
             raise ValueError("Invalid size: {}".format(size))
@@ -114,6 +83,7 @@ class Cube:
         self.start_coord = -trunc(self.size/2)
         self.end_coord = -self.start_coord + 1
         self.pieces = self._init_pieces()
+        self.parser = SequenceParser(size)
 
     def _init_pieces(self):
         return [
@@ -139,28 +109,13 @@ class Cube:
 
         return [piece for piece in self.pieces if coord_filter(*piece.coords)]
 
-    def _parse_move(self, move_text):
-        match = Cube.move_parse_regex.search(move_text)
-        if match:
-            count_txt = match['count']
-            count = {
-                '2': 2,
-                '-': -1,
-                '\'': -1
-            }.get(count_txt, 1)
-            return Move([self.end_coord-1], Direction(match['face']), count)
-        else:
-            raise ValueError('Unable to parse move: {}'.format(move_text))
+    def sequence(self, sequence_text):
+        [self.move(move) for move in self.parser.parse_sequence(sequence_text)]
 
-    def move(self, move_parts):
-        [self._move(self._parse_move(move_part)) for move_part in move_parts.split()]
+    def move(self, move):
+        pieces_affected = [piece for piece in self.pieces if move.affects_piece(piece)]
 
-    def _move(self, move_details):
-        pieces_affected = [piece for piece in self.pieces if move_details.affects_piece(piece)]
-        self._move_pieces(pieces_affected, move_details.direction, move_details.count)
-
-    def _move_pieces(self, pieces, direction, count):
-        d = 1 if count > 0 else -1
+        d = 1 if move.count > 0 else -1
         transform = {
             Direction.UP: lambda x, y, z: (-z*d, y, x*d),
             Direction.DOWN: lambda x, y, z: (z*d, y, -x*d),
@@ -168,13 +123,13 @@ class Cube:
             Direction.RIGHT: lambda x, y, z: (x, z*d, -y*d),
             Direction.FRONT: lambda x, y, z: (y*d, -x*d, z),
             Direction.BACK: lambda x, y, z: (-y*d, x*d, z)
-        }.get(direction)
+        }.get(move.direction)
 
-        for piece in pieces:
-            for _ in range(abs(count)):
+        for piece in pieces_affected:
+            for _ in range(abs(move.count)):
                 piece.move(transform(*piece.coords))
 
-        [piece.rotate(Rotation(direction, count)) for piece in pieces]
+        [piece.rotate(Rotation(move.direction, move.count)) for piece in pieces_affected]
 
     def is_done(self):
         def check_piece(p,d): return p.orientation.get_face_for_direction(d) == d
