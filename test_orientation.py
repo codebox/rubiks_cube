@@ -1,6 +1,8 @@
 import unittest
 
-from cube import Orientation, Rotation, Direction
+from direction import Direction
+from orientation import Orientation
+from rotation import Rotation
 
 
 class TestOrientation(unittest.TestCase):
