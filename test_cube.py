@@ -241,10 +241,124 @@ class TestEvenCube(TestCube):
         self.assert_piece_position(LDF, LUF)
         self.assert_piece_position(LDB, LDF)
 
+    def test_x_move_applied_correctly(self):
+        self.cube.sequence('x')
+
+        self.assert_piece_position(LUF, LUB)
+        self.assert_piece_position(RUF, RUB)
+        self.assert_piece_position(LUB, LDB)
+        self.assert_piece_position(RUB, RDB)
+        self.assert_piece_position(LDF, LUF)
+        self.assert_piece_position(RDF, RUF)
+        self.assert_piece_position(LDB, LDF)
+        self.assert_piece_position(RDB, RDF)
+
+    def test_x2_move_applied_correctly(self):
+        self.cube.sequence('X2')
+
+        self.assert_piece_position(LUF, LDB)
+        self.assert_piece_position(RUF, RDB)
+        self.assert_piece_position(LUB, LDF)
+        self.assert_piece_position(RUB, RDF)
+        self.assert_piece_position(LDF, LUB)
+        self.assert_piece_position(RDF, RUB)
+        self.assert_piece_position(LDB, LUF)
+        self.assert_piece_position(RDB, RUF)
+
+    def test_x_minus_1_move_applied_correctly(self):
+        self.cube.sequence('x-')
+
+        self.assert_piece_position(LUF, LDF)
+        self.assert_piece_position(RUF, RDF)
+        self.assert_piece_position(LUB, LUF)
+        self.assert_piece_position(RUB, RUF)
+        self.assert_piece_position(LDF, LDB)
+        self.assert_piece_position(RDF, RDB)
+        self.assert_piece_position(LDB, LUB)
+        self.assert_piece_position(RDB, RUB)
+
+    def test_y_move_applied_correctly(self):
+        self.cube.sequence('y')
+
+        self.assert_piece_position(LUF, LUB)
+        self.assert_piece_position(RUF, LUF)
+        self.assert_piece_position(LUB, RUB)
+        self.assert_piece_position(RUB, RUF)
+        self.assert_piece_position(LDF, LDB)
+        self.assert_piece_position(RDF, LDF)
+        self.assert_piece_position(LDB, RDB)
+        self.assert_piece_position(RDB, RDF)
+
+    def test_y2_move_applied_correctly(self):
+        self.cube.sequence('y2')
+
+        self.assert_piece_position(LUF, RUB)
+        self.assert_piece_position(RUF, LUB)
+        self.assert_piece_position(LUB, RUF)
+        self.assert_piece_position(RUB, LUF)
+        self.assert_piece_position(LDF, RDB)
+        self.assert_piece_position(RDF, LDB)
+        self.assert_piece_position(LDB, RDF)
+        self.assert_piece_position(RDB, LDF)
+
+    def test_y_minus_1_move_applied_correctly(self):
+        self.cube.sequence('Y-')
+
+        self.assert_piece_position(LUF, RUF)
+        self.assert_piece_position(RUF, RUB)
+        self.assert_piece_position(LUB, LUF)
+        self.assert_piece_position(RUB, LUB)
+        self.assert_piece_position(LDF, RDF)
+        self.assert_piece_position(RDF, RDB)
+        self.assert_piece_position(LDB, LDF)
+        self.assert_piece_position(RDB, LDB)
+
+    def test_z_move_applied_correctly(self):
+        self.cube.sequence('Z')
+
+        self.assert_piece_position(LUF, RUF)
+        self.assert_piece_position(RUF, RDF)
+        self.assert_piece_position(LUB, RUB)
+        self.assert_piece_position(RUB, RDB)
+        self.assert_piece_position(LDF, LUF)
+        self.assert_piece_position(RDF, LDF)
+        self.assert_piece_position(LDB, LUB)
+        self.assert_piece_position(RDB, LDB)
+
+    def test_z2_move_applied_correctly(self):
+        self.cube.sequence('z2')
+
+        self.assert_piece_position(LUF, RDF)
+        self.assert_piece_position(RUF, LDF)
+        self.assert_piece_position(LUB, RDB)
+        self.assert_piece_position(RUB, LDB)
+        self.assert_piece_position(LDF, RUF)
+        self.assert_piece_position(RDF, LUF)
+        self.assert_piece_position(LDB, RUB)
+        self.assert_piece_position(RDB, LUB)
+
+    def test_z_minus_1_move_applied_correctly(self):
+        self.cube.sequence('z-')
+
+        self.assert_piece_position(LUF, LDF)
+        self.assert_piece_position(RUF, LUF)
+        self.assert_piece_position(LUB, LDB)
+        self.assert_piece_position(RUB, LUB)
+        self.assert_piece_position(LDF, RDF)
+        self.assert_piece_position(RDF, RUF)
+        self.assert_piece_position(LDB, RDB)
+        self.assert_piece_position(RDB, RUB)
+
     def test_is_done(self):
         self.assert_is_done_at_end_of_sequence('U U-')
         self.assert_is_done_at_end_of_sequence('R R R R')
         self.assert_is_done_at_end_of_sequence('L2 L2')
+        self.assert_is_done_at_end_of_sequence('L R-')
+
+        self.assert_is_done_at_end_of_sequence('x')
+        self.assert_is_done_at_end_of_sequence('y')
+        self.assert_is_done_at_end_of_sequence('z')
+
         # https://mzrg.com/rubik/ordercalc.shtml
         self.assert_is_done_at_end_of_sequence('R U ' * 15)
         self.assert_is_done_at_end_of_sequence('R2 U ' * 6)
@@ -451,6 +565,14 @@ class TestOddCube(TestCube):
         self.assert_face_pieces(Direction.BACK, BC, BU, BL, BD, BR, LUB, LDB, RUB, RDB)
 
     def test_is_done(self):
+        self.assert_is_done_at_end_of_sequence('R M- L-')
+        self.assert_is_done_at_end_of_sequence('F S B-')
+        self.assert_is_done_at_end_of_sequence('U- E D')
+
+        self.assert_is_done_at_end_of_sequence('x')
+        self.assert_is_done_at_end_of_sequence('y')
+        self.assert_is_done_at_end_of_sequence('z')
+
         # https://mzrg.com/rubik/ordercalc.shtml
         self.assert_is_done_at_end_of_sequence('R U ' * 105)
         self.assert_is_done_at_end_of_sequence('R2 U ' * 30)
