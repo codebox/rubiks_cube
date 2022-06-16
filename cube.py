@@ -13,16 +13,16 @@ class Cube:
         self.size = size
         self.is_odd = self.size % 2 == 1
         self.start_coord = -trunc(self.size/2)
-        self.end_coord = -self.start_coord + 1
+        self.end_coord = -self.start_coord
         self.pieces = self._init_pieces()
         self.parser = SequenceParser(size)
 
     def _init_pieces(self):
         return [
             Piece((x, y, z))
-            for x in range(self.start_coord, self.end_coord) if self.is_odd or x != 0
-            for y in range(self.start_coord, self.end_coord) if self.is_odd or y != 0
-            for z in range(self.start_coord, self.end_coord) if self.is_odd or z != 0
+            for x in range(self.start_coord, self.end_coord + 1) if self.is_odd or x != 0
+            for y in range(self.start_coord, self.end_coord + 1) if self.is_odd or y != 0
+            for z in range(self.start_coord, self.end_coord + 1) if self.is_odd or z != 0
         ]
 
     def get_pieces_for_face(self, face):
@@ -45,6 +45,9 @@ class Cube:
         [self.move(move) for move in self.parser.parse_sequence(sequence_text)]
 
     def move(self, move):
+        if not move.is_valid_for_cube_size(self.size):
+            raise ValueError('The move {} is not valid for a cube of size {}'.format(move, self.size))
+
         pieces_affected = [piece for piece in self.pieces if move.affects_piece(piece)]
 
         d = 1 if move.count > 0 else -1
@@ -64,5 +67,7 @@ class Cube:
             piece.rotate(rotation)
 
     def is_done(self):
-        def check_piece(p,d): return p.orientation.get_face_for_direction(d) == d
-        return all(all(check_piece(piece, direction) for piece in self.get_pieces_for_face(direction)) for direction in Direction)
+        def count_colours_on_face(face):
+            return len(set([piece.face_value(face) for piece in self.get_pieces_for_face(face)]))
+        return all(count_colours_on_face(direction) == 1 for direction in Direction)
+
