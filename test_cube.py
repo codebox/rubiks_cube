@@ -2,6 +2,7 @@ import unittest
 
 from cube import Cube
 from direction import Direction
+from move import Move
 from piece import Piece
 
 LUF = (-1, 1, 1)
@@ -42,6 +43,14 @@ class TestCube(unittest.TestCase):
         for ic in initial_coords:
             self.assert_piece_position(ic, ic)
 
+    def assert_is_done_at_end_of_sequence(self, sequence):
+        steps = sequence.split()
+        for step in steps[:-1]:
+            self.cube.sequence(step)
+            self.assertFalse(self.cube.is_done())
+
+        self.cube.sequence(steps[-1])
+        self.assertTrue(self.cube.is_done())
 
 class TestEvenCube(TestCube):
     def setUp(self):
@@ -232,6 +241,25 @@ class TestEvenCube(TestCube):
         self.assert_piece_position(LDF, LUF)
         self.assert_piece_position(LDB, LDF)
 
+    def test_is_done(self):
+        self.assert_is_done_at_end_of_sequence('U U-')
+        self.assert_is_done_at_end_of_sequence('R R R R')
+        self.assert_is_done_at_end_of_sequence('L2 L2')
+        # https://mzrg.com/rubik/ordercalc.shtml
+        self.assert_is_done_at_end_of_sequence('R U ' * 15)
+        self.assert_is_done_at_end_of_sequence('R2 U ' * 6)
+        self.assert_is_done_at_end_of_sequence('R2 U2 ' * 3)
+        self.assert_is_done_at_end_of_sequence('R U L ' * 18)
+
+    def test_invalid_moves_cause_errors(self):
+        self.assertRaises(ValueError, self.cube.sequence, 'not a sequence')
+        self.assertRaises(ValueError, self.cube.sequence, 'M')
+        self.assertRaises(ValueError, self.cube.sequence, 'E')
+        self.assertRaises(ValueError, self.cube.sequence, 'S')
+
+        self.assertRaises(ValueError, self.cube.move, Move([1,2], Direction.UP, 1))
+        self.assertRaises(ValueError, self.cube.move, Move([1,0], Direction.UP, 1))
+        self.assertRaises(ValueError, self.cube.move, Move([1,-2], Direction.UP, 1))
 
 class TestOddCube(TestCube):
     def setUp(self):
@@ -421,3 +449,16 @@ class TestOddCube(TestCube):
         self.assert_face_pieces(Direction.RIGHT, RC, RU, RD, FR, BR, RUF, RDF, RUB, RDB)
         self.assert_face_pieces(Direction.FRONT, FC, FU, FL, FD, FR, LUF, LDF, RUF, RDF)
         self.assert_face_pieces(Direction.BACK, BC, BU, BL, BD, BR, LUB, LDB, RUB, RDB)
+
+    def test_is_done(self):
+        # https://mzrg.com/rubik/ordercalc.shtml
+        self.assert_is_done_at_end_of_sequence('R U ' * 105)
+        self.assert_is_done_at_end_of_sequence('R2 U ' * 30)
+        self.assert_is_done_at_end_of_sequence('R2 U2 ' * 6)
+        self.assert_is_done_at_end_of_sequence('R U L ' * 90)
+
+    def test_invalid_moves_cause_errors(self):
+        self.assertRaises(ValueError, self.cube.sequence, 'not a sequence')
+
+        self.assertRaises(ValueError, self.cube.move, Move([1, 2], Direction.UP, 1))
+        self.assertRaises(ValueError, self.cube.move, Move([1,-2], Direction.UP, 1))
