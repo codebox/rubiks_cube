@@ -1,7 +1,8 @@
 import unittest
 
 from cube import Cube
-
+from direction import Direction
+from piece import Piece
 
 LUF = (-1, 1, 1)
 RUF = (1, 1, 1)
@@ -406,3 +407,17 @@ class TestOddCube(TestCube):
         self.assert_piece_position(RU, LU)
         self.assert_piece_position(RD, RU)
         self.assert_piece_position(LD, RD)
+
+    def assert_face_pieces(self, face, *expected_piece_coords):
+        self.assertCountEqual(
+            self.cube.get_pieces_for_face(face),
+            [Piece(c) for c in expected_piece_coords]
+        )
+
+    def test_get_pieces_for_face(self):
+        self.assert_face_pieces(Direction.UP, UC, FU, LU, RU, BU, LUF, RUF, LUB, RUB)
+        self.assert_face_pieces(Direction.DOWN, DC, FD, LD, RD, BD, LDF, RDF, LDB, RDB)
+        self.assert_face_pieces(Direction.LEFT, LC, LU, LD, FL, BL, LUF, LDF, LUB, LDB)
+        self.assert_face_pieces(Direction.RIGHT, RC, RU, RD, FR, BR, RUF, RDF, RUB, RDB)
+        self.assert_face_pieces(Direction.FRONT, FC, FU, FL, FD, FR, LUF, LDF, RUF, RDF)
+        self.assert_face_pieces(Direction.BACK, BC, BU, BL, BD, BR, LUB, LDB, RUB, RDB)

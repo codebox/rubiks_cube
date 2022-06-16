@@ -40,3 +40,6 @@ class Orientation:
 
     def get_face_for_direction(self, direction):
         return self.direction_faces[direction]
+
+    def __eq__(self, other):
+        return self.direction_faces == other.direction_faces

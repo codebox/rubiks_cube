@@ -21,3 +21,6 @@ class Piece:
         return "Piece[{}] {}".format(self.id, self.orientation)
 
     __repr__ = __str__
+
+    def __eq__(self, other):
+        return hasattr(other, 'coords') and hasattr(other, 'orientation') and self.coords == other.coords and self.orientation == other.orientation

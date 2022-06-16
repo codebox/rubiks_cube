@@ -26,8 +26,7 @@ class Cube:
         ]
 
     def get_pieces_for_face(self, face):
-        index = trunc(self.size / 2) * -1 if face in [Direction.LEFT, Direction.DOWN, Direction.BACK] else 1
-        return self._get_pieces_in_slice(face, index)
+        return self._get_pieces_in_slice(face, trunc(self.size / 2))
 
     def _get_pieces_in_slice(self, direction, index):
         coord_filter = {
