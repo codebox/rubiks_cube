@@ -34,7 +34,7 @@ DC = (0,-1,0)
 
 class TestCube(unittest.TestCase):
     def assert_piece_position(self, initial_coords, expected_coords):
-        piece = next(p for p in self.cube.pieces if p.initial_coords == initial_coords)
+        piece = next(p for p in self.cube.pieces if p.id == "{},{},{}".format(*initial_coords))
         self.assertEqual(piece.coords, expected_coords,
                          "Expected piece with initial_coord {} to be at {} but instead it was at {}".
                          format(initial_coords, expected_coords, piece.coords))

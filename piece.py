@@ -2,10 +2,9 @@ from orientation import Orientation
 
 
 class Piece:
-    def __init__(self, initial_coords):
-        self.id = "{},{},{}".format(*initial_coords)
-        self.initial_coords = initial_coords
-        self.coords = initial_coords
+    def __init__(self, coords):
+        self.id = "{},{},{}".format(*coords)
+        self.coords = coords
         self.orientation = Orientation()
 
     def move(self, new_coords):
