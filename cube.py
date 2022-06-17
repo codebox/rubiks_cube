@@ -22,7 +22,7 @@ class Cube:
             Piece((x, y, z))
             for x in range(self.start_coord, self.end_coord + 1) if self.is_odd or x != 0
             for y in range(self.start_coord, self.end_coord + 1) if self.is_odd or y != 0
-            for z in range(self.start_coord, self.end_coord + 1) if self.is_odd or z != 0
+            for z in range(self.start_coord, self.end_coord + 1) if (self.is_odd or z != 0) and (max(abs(x), abs(y), abs(z)) == self.end_coord)
         ]
 
     def get_pieces_for_face(self, face):
