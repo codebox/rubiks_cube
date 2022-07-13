@@ -29,3 +29,5 @@ class Move:
 
     def __str__(self):
         return '{}{}{}'.format(self.direction, self.slice_numbers, self.count)
+
+    __repr__ = __str__
