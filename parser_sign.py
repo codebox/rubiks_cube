@@ -1,6 +1,9 @@
 import re
 import pprint
 
+from direction import Direction
+from move import Move
+
 
 class Parser:
     class State:
@@ -12,20 +15,37 @@ class Parser:
             return '{} {}'.format('PARSED OK' if not self.remainder else self.remainder, self.tree)
 
     class Result:
-        def __init__(self, state):
-            self.state = state
+        def __init__(self, tree):
+            self.tree = tree
 
-        def find_symbols(self, symbol):
+        def find_symbols(self, symbol, root=None, do_flatten=True):
             matches = []
-            def search(d):
-                for k,v in d.items():
-                    if k == symbol:
-                        matches.append(v)
-                    else:
-                        for item in v:
-                            search(item)
-            search(self.state.tree)
-            return matches
+
+            def flatten(v):
+                if type(v) == list:
+                    if len(v) == 0:
+                        return None
+                    elif len(v) == 1:
+                        return v[0]
+
+                return v
+
+            def search(o):
+                if type(o) == list:
+                    [search(item) for item in o]
+
+                elif type(o) == dict:
+                    for k, v in o.items():
+                        if k == symbol:
+                            matches.append(flatten(v))
+                        else:
+                            search(v)
+                else:
+                    return
+
+            search(root or self.tree)
+
+            return flatten(matches) if do_flatten else matches
 
     def __init__(self, grammar):
         self.rules = self._build_rules(grammar)
@@ -69,7 +89,10 @@ class Parser:
             return sorted(matches, key=lambda m: len(m.remainder))[0]
 
     def parse(self, text):
-        return Parser.Result(self._consume(text, 'START'))
+        consume_result = self._consume(text, 'START')
+        if not consume_result.remainder:
+            return Parser.Result(consume_result.tree)
+        raise ValueError('Unable to parse "{}" failed near character {}'.format(text, len(text) - len(consume_result.remainder)+1))
 
 
 # see https://mzrg.com/rubik/nota.shtml
@@ -92,8 +115,39 @@ FACE_LOWER -> f | b | l | r | u | d
 
 p = Parser(grammar)
 r=p.parse("R2 R' 5R' 3-4r")
-pp = pprint.PrettyPrinter(indent=4)
-# pp.pprint(r.tree)
-pp.pprint(r.find_symbols('STEP'))
+
+def to_moves(result):
+    def get_count_from_angle(angle):
+        if angle == "2":
+            return 2
+        elif angle == "'":
+            return -1
+        elif angle is None:
+            return 1
+
+        raise ValueError('Unknown angle value: {}'.format(angle))
+
+    def to_move(step):
+        single_layer_turn = result.find_symbols('SINGLE_LAYER_TURN', step)
+        if single_layer_turn:
+            layer = int(result.find_symbols('SINGLE_LAYER', single_layer_turn) or 1)
+            face = Direction(result.find_symbols('FACE_UPPER', single_layer_turn))
+            angle = get_count_from_angle(result.find_symbols('ANGLE', single_layer_turn))
+            return Move([layer], face, angle)
+
+    return [to_move(step) for step in result.find_symbols('STEP', do_flatten=False)]
+
+print(r.tree)
+# pp = pprint.PrettyPrinter(indent=4)
+# for step in r.find_symbols('STEP'):
+#     print(step)
+#     s = r.find_symbols('SINGLE_LAYER_TURN', step)
+#     if s:
+#         print('s',r.find_symbols('SINGLE_LAYER', s), r.find_symbols('FACE_UPPER', s), r.find_symbols('ANGLE', s))
+#     m = r.find_symbols('MULTI_LAYER_TURN', step)
+#     if m:
+#         print('m',r.find_symbols('MULTI_LAYER', m), r.find_symbols('FACE_LOWER', m), r.find_symbols('ANGLE', m))
+# # pp.pprint(r.find_symbols('STEP'))
+print(to_moves(r))
 
 
